@@ -1,6 +1,6 @@
 /// @file cppcrc.h
 /// @author Darren V Levine (DarrenVLevine@gmail.com)
-/// @brief
+/// @brief A very small, fast, header-only, C++ library for generating CRCs
 /// @version 1.0
 /// @date 2022-11-17
 ///
