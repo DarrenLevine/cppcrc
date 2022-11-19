@@ -4,12 +4,12 @@
 
 int main()
 {
-    // 2) pick some CRC settings
+    // 2) pick some CRC settings (these are just an example)
     using base_type = uint8_t;
     constexpr base_type poly = 0x12;
     constexpr base_type init_value = 0x34;
     constexpr bool reflect_in = true;
-    constexpr bool reflect_out = false;
+    constexpr bool reflect_out = true;
     constexpr base_type Xor_out = 0xFF;
 
     // 3) create a new CRC type by filling in the CRC parameters

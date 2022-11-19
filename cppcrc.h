@@ -26,20 +26,15 @@ namespace crc_utils
     }
     inline constexpr uint16_t reverse(uint16_t x)
     {
-        x = ((x & uint16_t(0x5555ull)) << 1) | ((x & uint16_t(0xAAAAull)) >> 1);
-        x = ((x & uint16_t(0x3333ull)) << 2) | ((x & uint16_t(0xCCCCull)) >> 2);
-        x = ((x & uint16_t(0x0F0Full)) << 4) | ((x & uint16_t(0xF0F0ull)) >> 4);
-        x = ((x & uint16_t(0x00FFull)) << 8) | ((x & uint16_t(0xFF00ull)) >> 8);
-        return x;
+        return uint16_t(reverse(uint8_t(x))) << 8 | uint16_t(reverse(uint8_t(x >> 8)));
     }
     inline constexpr uint32_t reverse(uint32_t x)
     {
-        x = ((x & uint32_t(0x55555555ull)) << 1) | ((x & uint32_t(0xAAAAAAAAull)) >> 1);
-        x = ((x & uint32_t(0x33333333ull)) << 2) | ((x & uint32_t(0xCCCCCCCCull)) >> 2);
-        x = ((x & uint32_t(0x0F0F0F0Full)) << 4) | ((x & uint32_t(0xF0F0F0F0ull)) >> 4);
-        x = ((x & uint32_t(0x00FF00FFull)) << 8) | ((x & uint32_t(0xFF00FF00ull)) >> 8);
-        x = ((x & uint32_t(0x0000FFFFull)) << 16) | ((x & uint32_t(0xFFFF0000ull)) >> 16);
-        return x;
+        return uint32_t(reverse(uint16_t(x))) << 16 | uint32_t(reverse(uint16_t(x >> 16)));
+    }
+    inline constexpr uint64_t reverse(uint64_t x)
+    {
+        return uint64_t(reverse(uint32_t(x))) << 32 | uint64_t(reverse(uint32_t(x >> 32)));
     }
 
     template <typename out_t, out_t poly, bool refl_in, bool refl_out, size_t index>
@@ -47,7 +42,7 @@ namespace crc_utils
     {
         constexpr size_t bit_width = sizeof(out_t) * 8;
         out_t remainder = refl_in ? reverse(static_cast<out_t>(index)) >> (bit_width - 8u) : static_cast<out_t>(index);
-        const out_t mask = static_cast<out_t>(1) << (bit_width - 1u);
+        constexpr out_t mask = static_cast<out_t>(1) << (bit_width - 1u);
         for (size_t i = 0; i < bit_width; i++)
         {
             if (remainder & mask)
@@ -74,7 +69,7 @@ namespace crc_utils
     constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc = init)
     {
         if (n == 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
-            return out_t{};
+            return crc;
         constexpr auto &lookup = crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
         crc = reverse(crc);
         do
@@ -86,7 +81,7 @@ namespace crc_utils
     constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc = init)
     {
         if (n == 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
-            return out_t{};
+            return crc;
         constexpr auto &lookup = crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
         constexpr size_t bit_width_minus_8 = sizeof(out_t) * 8 - 8U;
         do
@@ -163,6 +158,13 @@ namespace CRC32
     using C = crc_utils::crc<uint32_t, 0x1EDC6F41, 0xFFFFFFFF, true, true, 0xFFFFFFFF>;
     using D = crc_utils::crc<uint32_t, 0xA833982B, 0xFFFFFFFF, true, true, 0xFFFFFFFF>;
     using Q = crc_utils::crc<uint32_t, 0x814141AB, 0x00000000, false, false, 0x00000000>;
+}
+namespace CRC64
+{
+    using ECMA = crc_utils::crc<uint64_t, 0x42F0E1EBA9EA3693, 0x0000000000000000, false, false, 0x0000000000000000>;
+    using GO_ISO = crc_utils::crc<uint64_t, 0x000000000000001B, 0xFFFFFFFFFFFFFFFF, true, true, 0xFFFFFFFFFFFFFFFF>;
+    using WE = crc_utils::crc<uint64_t, 0x42F0E1EBA9EA3693, 0xFFFFFFFFFFFFFFFF, false, false, 0xFFFFFFFFFFFFFFFF>;
+    using XY = crc_utils::crc<uint64_t, 0x42F0E1EBA9EA3693, 0xFFFFFFFFFFFFFFFF, true, true, 0xFFFFFFFFFFFFFFFF>;
 }
 
 #endif // CPPCRC_H_
