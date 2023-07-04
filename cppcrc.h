@@ -94,7 +94,7 @@ namespace crc_utils
     {
         static constexpr out_t calc(const uint8_t *bytes, size_t n, out_t crc = init)
         {
-            return calculate_crc<out_t, poly, init, refl_in, refl_out, x_or_out>(bytes, n, init);
+            return calculate_crc<out_t, poly, init, refl_in, refl_out, x_or_out>(bytes, n, crc);
         }
         static constexpr auto &table()
         {
