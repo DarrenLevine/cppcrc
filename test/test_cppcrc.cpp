@@ -61,9 +61,72 @@ static_assert(CRC64::GO_ISO::calc(test_sequence, sizeof(test_sequence)) == 0xAA1
 static_assert(CRC64::WE::calc(test_sequence, sizeof(test_sequence)) == 0x4D648712E74F8E08_u64, "validate");
 static_assert(CRC64::XY::calc(test_sequence, sizeof(test_sequence)) == 0x13CEC7423537E08D_u64, "validate");
 
+// testing that a non-matching reflection in/out values still work
+static_assert(crc_utils::crc<uint32_t, 0x4C11DB7, 0xAB111FF, true, false, 0xFFFFFFFF>::calc(nullptr, 0) == 0xF54EEE00_u32, "validate");
+static_assert(crc_utils::crc<uint32_t, 0x4C11DB7, 0xAB111FF, true, false, 0xFFFFFFFF>::calc(test_sequence, sizeof(test_sequence)) == 0xEB8C5295_u32, "validate");
+static_assert(crc_utils::crc<uint32_t, 0x4C11DB7, 0xAB111FF, false, true, 0xFFFFFFFF>::calc(nullptr, 0) == 0x007772AF_u32, "validate");
+static_assert(crc_utils::crc<uint32_t, 0x4C11DB7, 0xAB111FF, false, true, 0xFFFFFFFF>::calc(test_sequence, sizeof(test_sequence)) == 0xB6607917_u32, "validate");
+
+// testing that null buffers returns bit reversed init value
+static_assert(crc_utils::crc<uint8_t, 0x31, 0xbf, true, true, 0x00>::calc(nullptr, 0) == 0xfd_u8, "validate");
+
+static_assert(CRC8::CRC8::calc(nullptr, 0) == 0x00_u8, "validate");
+static_assert(CRC8::CDMA2000::calc(nullptr, 0) == 0xFF_u8, "validate");
+static_assert(CRC8::DARC::calc(nullptr, 0) == 0x00_u8, "validate");
+static_assert(CRC8::DVB_S2::calc(nullptr, 0) == 0x00_u8, "validate");
+static_assert(CRC8::EBU::calc(nullptr, 0) == 0xFF_u8, "validate");
+static_assert(CRC8::I_CODE::calc(nullptr, 0) == 0xFD_u8, "validate");
+static_assert(CRC8::ITU::calc(nullptr, 0) == 0x55_u8, "validate");
+static_assert(CRC8::MAXIM::calc(nullptr, 0) == 0x00_u8, "validate");
+static_assert(CRC8::ROHC::calc(nullptr, 0) == 0xFF_u8, "validate");
+static_assert(CRC8::WCDMA::calc(nullptr, 0) == 0x00_u8, "validate");
+static_assert(CRC16::ARC::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::AUG_CCITT::calc(nullptr, 0) == 0x1D0F_u16, "validate");
+static_assert(CRC16::BUYPASS::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::CCITT_FALSE::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::CDMA2000::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::DDS_110::calc(nullptr, 0) == 0x800D_u16, "validate");
+static_assert(CRC16::DECT_R::calc(nullptr, 0) == 0x0001_u16, "validate");
+static_assert(CRC16::DECT_X::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::DNP::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::EN_13757::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::GENIBUS::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::KERMIT::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::MAXIM::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::MCRF4XX::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::MODBUS::calc(nullptr, 0) == 0xFFFF_u16, "validate");
+static_assert(CRC16::RIELLO::calc(nullptr, 0) == 0x554D_u16, "validate");
+static_assert(CRC16::T10_DIF::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::TELEDISK::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::TMS37157::calc(nullptr, 0) == 0x3791_u16, "validate");
+static_assert(CRC16::USB::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::X_25::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::XMODEM::calc(nullptr, 0) == 0x0000_u16, "validate");
+static_assert(CRC16::A::calc(nullptr, 0) == 0x6363_u16, "validate");
+static_assert(CRC32::CRC32::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC32::BZIP2::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC32::JAMCRC::calc(nullptr, 0) == 0xFFFFFFFF_u32, "validate");
+static_assert(CRC32::MPEG_2::calc(nullptr, 0) == 0xFFFFFFFF_u32, "validate");
+static_assert(CRC32::POSIX::calc(nullptr, 0) == 0xFFFFFFFF_u32, "validate");
+static_assert(CRC32::SATA::calc(nullptr, 0) == 0x52325032_u32, "validate");
+static_assert(CRC32::XFER::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC32::C::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC32::D::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC32::Q::calc(nullptr, 0) == 0x00000000_u32, "validate");
+static_assert(CRC64::ECMA::calc(nullptr, 0) == 0x0000000000000000_u64, "validate");
+static_assert(CRC64::GO_ISO::calc(nullptr, 0) == 0x0000000000000000_u64, "validate");
+static_assert(CRC64::WE::calc(nullptr, 0) == 0x0000000000000000_u64, "validate");
+static_assert(CRC64::XY::calc(nullptr, 0) == 0x0000000000000000_u64, "validate");
+
+constexpr uint8_t test_sequence2[] = {0xff, 0x01};
+static_assert(crc_utils::crc<uint8_t, 0x9B, 0x00, false, false, 0x00>::calc(test_sequence2, 2) == 0x2A_u8, "validate");
+
+constexpr uint8_t test_sequence3[] = {0x01};
+static_assert(crc_utils::crc<uint8_t, 0x9B, 0xFF, false, false, 0x00>::calc(test_sequence3, 1) == 0xE0_u8, "validate");
+
 int main()
 {
-    constexpr uint8_t data[] = {0x12, 0x5A, 0x23, 0x19, 0x92, 0xF3, 0xDE, 0xC2, 0x5A, 0x1F, 0x91, 0xA3};
+    constexpr uint8_t data[]  = {0x12, 0x5A, 0x23, 0x19, 0x92, 0xF3, 0xDE, 0xC2, 0x5A, 0x1F, 0x91, 0xA3};
     constexpr uint8_t crc_val = CRC8::CRC8::calc(data, 12);
     static_assert(crc_val == 0x71);
 

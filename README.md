@@ -1,70 +1,76 @@
 # CPP/CRC
+
 A very small, fast, header-only, C++ library for generating CRCs
 
 ![license](https://img.shields.io/badge/license-MIT-informational) ![version](https://img.shields.io/badge/version-1.0-blue)
 
 ## Requirements
+
 * C++14 or greater
 
 ## Features
+
 * Can be used to generate arbitrary/custom CRC calculators, and CRC lookup tables **at compile time**
-* Header-only, single file, very small backend implimentation (<100 lines)
+* Header-only, single file, very small backend implementation (<100 lines)
 * Each CRC function has the signature:
+
 ```cpp
 constexpr out_t crc_type::crc_name::calc(const uint8_t *bytes, size_t size, out_t crc = initial_value)
 ```
+
 * Support for the following algorithms are built-in:
-    * CRC8::CRC8::calc
-    * CRC8::CDMA2000::calc
-    * CRC8::DARC::calc
-    * CRC8::DVB_S2::calc
-    * CRC8::EBU::calc
-    * CRC8::I_CODE::calc
-    * CRC8::ITU::calc
-    * CRC8::MAXIM::calc
-    * CRC8::ROHC::calc
-    * CRC8::WCDMA::calc
-    * CRC16::ARC::calc
-    * CRC16::AUG_CCITT::calc
-    * CRC16::BUYPASS::calc
-    * CRC16::CCITT_FALSE::calc
-    * CRC16::CDMA2000::calc
-    * CRC16::DDS_110::calc
-    * CRC16::DECT_R::calc
-    * CRC16::DECT_X::calc
-    * CRC16::DNP::calc
-    * CRC16::EN_13757::calc
-    * CRC16::GENIBUS::calc
-    * CRC16::KERMIT::calc
-    * CRC16::MAXIM::calc
-    * CRC16::MCRF4XX::calc
-    * CRC16::MODBUS::calc
-    * CRC16::RIELLO::calc
-    * CRC16::T10_DIF::calc
-    * CRC16::TELEDISK::calc
-    * CRC16::TMS37157::calc
-    * CRC16::USB::calc
-    * CRC16::X_25::calc
-    * CRC16::XMODEM::calc
-    * CRC16::A::calc
-    * CRC32::CRC32::calc
-    * CRC32::BZIP2::calc
-    * CRC32::JAMCRC::calc
-    * CRC32::MPEG_2::calc
-    * CRC32::POSIX::calc
-    * CRC32::SATA::calc
-    * CRC32::XFER::calc
-    * CRC32::C::calc
-    * CRC32::D::calc
-    * CRC32::Q::calc
-    * CRC64::ECMA::calc
-    * CRC64::GO_ISO::calc
-    * CRC64::WE::calc
-    * CRC64::XY::calc
+  * CRC8::CRC8::calc
+  * CRC8::CDMA2000::calc
+  * CRC8::DARC::calc
+  * CRC8::DVB_S2::calc
+  * CRC8::EBU::calc
+  * CRC8::I_CODE::calc
+  * CRC8::ITU::calc
+  * CRC8::MAXIM::calc
+  * CRC8::ROHC::calc
+  * CRC8::WCDMA::calc
+  * CRC16::ARC::calc
+  * CRC16::AUG_CCITT::calc
+  * CRC16::BUYPASS::calc
+  * CRC16::CCITT_FALSE::calc
+  * CRC16::CDMA2000::calc
+  * CRC16::DDS_110::calc
+  * CRC16::DECT_R::calc
+  * CRC16::DECT_X::calc
+  * CRC16::DNP::calc
+  * CRC16::EN_13757::calc
+  * CRC16::GENIBUS::calc
+  * CRC16::KERMIT::calc
+  * CRC16::MAXIM::calc
+  * CRC16::MCRF4XX::calc
+  * CRC16::MODBUS::calc
+  * CRC16::RIELLO::calc
+  * CRC16::T10_DIF::calc
+  * CRC16::TELEDISK::calc
+  * CRC16::TMS37157::calc
+  * CRC16::USB::calc
+  * CRC16::X_25::calc
+  * CRC16::XMODEM::calc
+  * CRC16::A::calc
+  * CRC32::CRC32::calc
+  * CRC32::BZIP2::calc
+  * CRC32::JAMCRC::calc
+  * CRC32::MPEG_2::calc
+  * CRC32::POSIX::calc
+  * CRC32::SATA::calc
+  * CRC32::XFER::calc
+  * CRC32::C::calc
+  * CRC32::D::calc
+  * CRC32::Q::calc
+  * CRC64::ECMA::calc
+  * CRC64::GO_ISO::calc
+  * CRC64::WE::calc
+  * CRC64::XY::calc
 
 ## Usage Examples
 
 ### Using the built-in CRC functions
+
 ```cpp
 // 1) include "cppcrc.h"
 #include "cppcrc.h"
@@ -89,6 +95,7 @@ int main()
 ```
 
 ### Creating Your Own CRC Function
+
 ```cpp
 // 1) include "cppcrc.h"
 #include "cppcrc.h"
