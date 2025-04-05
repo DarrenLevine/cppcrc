@@ -2,7 +2,7 @@
 
 A very small, fast, header-only, C++ library for generating CRCs
 
-![license](https://img.shields.io/badge/license-MIT-informational) ![version](https://img.shields.io/badge/version-1.0-blue)
+![license](https://img.shields.io/badge/license-MIT-informational) ![version](https://img.shields.io/badge/version-1.2-blue)
 
 ## Requirements
 
@@ -12,6 +12,7 @@ A very small, fast, header-only, C++ library for generating CRCs
 
 * Can be used to generate arbitrary/custom CRC calculators, and CRC lookup tables **at compile time**
 * Header-only, single file, very small backend implementation (<100 lines)
+* Will tell you at compile time if your chosen algorithm needs special treatment for continuing/chunking CRC calculations
 * Each CRC function has the signature:
 
 ```cpp
@@ -123,3 +124,32 @@ int main()
     auto &crc_table = your_crc_name::table();
 }
 ```
+
+### Continuing/Chunking CRC Calculations
+
+Some CRC algorithms reverse and/or X-OR the bits of their output value. When this happens,
+you can't pass that same raw output CRC value back into a new calculation in an attempt
+to continue the calculation without first undoing those operations.
+
+CppCRC will automatically tell you if your situation falls into this category when you
+compile and give you the choice to follow the exact CRC algorithm or to automatically
+handle chunking corrections for you, with this error message:
+
+```c
+your_failing_code.cpp:123:1:   required from here
+cppcrc.h:110:27: error: static assertion failed:
+-----------------------------------------------------------------------------------
+This CRC algorithm uses 'refl_out=true or x_or_out!=0', so passing in previously
+calculated crc values will give you the wrong result, unless you first undo the
+output reflection and output X-OR operations on your old crc value, before passing
+it into the new calc() call.
+
+Please explicitly state your intent, by replacing the 'calc(...)' call with either:
+    calc_exact(...) - to ignore this warning and exactly follow the CRC algorithm
+                      (you will need to undo x-ors/reflects yourself), or
+    calc_chunk(...) - to automatically undo the reflection and X-ORs whenever a
+                      previously calculated crc value is passed in.
+-----------------------------------------------------------------------------------
+```
+
+See [examples/03_splitting_a_checksum_eval_into_chunks.cpp](examples/03_splitting_a_checksum_eval_into_chunks.cpp) for a demonstration and more discussion of calculation chunking.

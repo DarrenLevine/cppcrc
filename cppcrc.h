@@ -1,7 +1,7 @@
 /// @file cppcrc.h
 /// @author Darren V Levine (DarrenVLevine@gmail.com)
 /// @brief A very small, fast, header-only, C++ library for generating CRCs
-/// @version 1.1
+/// @version 1.2
 /// @date 2022-11-17
 ///
 /// @copyright (c) 2022 Darren V Levine. This code is licensed under MIT license (see LICENSE file for details).
@@ -67,8 +67,8 @@ namespace crc_utils
     constexpr out_t crc_lookup_table<out_t, poly, refl_in, refl_out, size, std::index_sequence<indexes...>>::value[size];
 #endif
 
-    template <typename out_t, out_t poly, out_t init, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<refl_in, int *>::type = nullptr>
-    constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc = init)
+    template <typename out_t, out_t poly, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<refl_in, int *>::type = nullptr>
+    constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc)
     {
         if (n == 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
             return (refl_out ? reverse(crc) : crc) ^ x_or_out;
@@ -80,8 +80,8 @@ namespace crc_utils
         return (refl_out != refl_in ? reverse(crc) : crc) ^ x_or_out; // needed since the reflections are baked into the table for speed
     }
 
-    template <typename out_t, out_t poly, out_t init, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<!refl_in, int *>::type = nullptr>
-    constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc = init)
+    template <typename out_t, out_t poly, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<!refl_in, int *>::type = nullptr>
+    constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc)
     {
         if (n > 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
         {
@@ -94,13 +94,72 @@ namespace crc_utils
         return (refl_out ? reverse(crc) : crc) ^ x_or_out;
     }
 
-    template <typename out_t, out_t poly, out_t init, bool refl_in, bool refl_out, out_t x_or_out>
+    template <typename out_t, out_t poly_arg, out_t init_arg, bool refl_in_arg, bool refl_out_arg, out_t x_or_out_arg>
     struct crc
     {
-        static constexpr out_t calc(const uint8_t *bytes, size_t n, out_t crc = init)
+        using type                             = out_t;
+        static constexpr out_t poly            = poly_arg;
+        static constexpr out_t init            = init_arg;
+        static constexpr out_t calc_chunk_init = (refl_out_arg ? reverse(init) : init) ^ x_or_out_arg;
+        static constexpr bool refl_in          = refl_in_arg;
+        static constexpr bool refl_out         = refl_out_arg;
+        static constexpr out_t x_or_out        = x_or_out_arg;
+
+        /// @brief calculates the checksum of some bytes (using the specified algorithm's initial value)
+        static constexpr out_t calc(const uint8_t *bytes = nullptr, size_t num_bytes = 0u)
         {
-            return calculate_crc<out_t, poly, init, refl_in, refl_out, x_or_out>(bytes, n, crc);
+            return calculate_crc<out_t, poly, refl_in, refl_out, x_or_out>(bytes, num_bytes, init);
         }
+
+        /// @brief calculates the checksum of some bytes (using the user-specified initial value - and warns the user if it is unsafe)
+        static constexpr out_t calc(const uint8_t *bytes, size_t num_bytes, out_t crc)
+        {
+            static_assert(
+                !refl_out && !x_or_out,
+                "\n"
+                "-----------------------------------------------------------------------------------\n"
+                "This CRC algorithm uses 'refl_out=true or x_or_out!=0', so passing in previously\n"
+                "calculated crc values will give you the wrong result, unless you first undo the\n"
+                "output reflection and output X-OR operations on your old crc value, before passing\n"
+                "it into the new calc() call.\n"
+                "\n"
+                "Please explicitly state your intent, by replacing the 'calc(...)' call with either:\n"
+                "    calc_exact(...) - to ignore this warning and exactly follow the CRC algorithm\n"
+                "                      (you will need to undo x-ors/reflects yourself), or\n"
+                "    calc_chunk(...) - to automatically undo the reflection and X-ORs whenever a\n"
+                "                      previously calculated crc value is passed in.\n"
+                "-----------------------------------------------------------------------------------\n");
+            return calculate_crc<out_t, poly, refl_in, refl_out, x_or_out>(bytes, num_bytes, init);
+        }
+
+        /// @brief calculates the checksum of some bytes exactly as the standard CRC algorithm specifies, ignoring chunking warnings
+        static constexpr out_t calc_exact(const uint8_t *bytes = nullptr, size_t num_bytes = 0u, out_t crc = init)
+        {
+            return calculate_crc<out_t, poly, refl_in, refl_out, x_or_out>(bytes, num_bytes, crc);
+        }
+
+        /// @brief Calculates the checksum of some bytes, but also handles undoing x_or_out and refl_out operations
+        /// of non-initial CRC values which is needed if you plan on chunking up a single CRC calculation into
+        /// multiple calls algorithms that use refl_out or x_or_out
+        /// NOTE: If you want to switch between doing chunking and not doing chunking, calc_chunk is safe to use
+        /// in both cases - with no extra overhead if your algorithm doesn't use refl_out or x_or_out (the undo
+        /// operations are removed in those cases).
+        static constexpr out_t calc_chunk(const uint8_t *bytes = nullptr, size_t num_bytes = 0u, out_t crc = calc_chunk_init)
+        {
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || (defined(__cplusplus) && __cplusplus >= 201703L))
+#define CONSTEXPR_IF_MODIFIER constexpr
+#else
+#define CONSTEXPR_IF_MODIFIER
+#endif
+            if CONSTEXPR_IF_MODIFIER (x_or_out)
+                crc = crc ^ x_or_out;
+            if CONSTEXPR_IF_MODIFIER (refl_out)
+                crc = reverse(crc);
+#undef CONSTEXPR_IF_MODIFIER
+            return calculate_crc<out_t, poly, refl_in, refl_out, x_or_out>(bytes, num_bytes, crc);
+        }
+
+        /// @brief the underlying pre-computed CRC table used for fast lookup-table-based calculations
         static constexpr auto &table()
         {
             return crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
