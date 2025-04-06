@@ -15,7 +15,8 @@ A very small, fast, header-only, C++ library for generating CRCs
 * Each CRC function has the signature:
 
 ```cpp
-constexpr out_t crc_type::crc_name::calc(const uint8_t *bytes, size_t size, out_t crc = initial_value)
+constexpr out_t crc_type::crc_name::calc(
+    const uint8_t *bytes, size_t num_bytes, out_t prior_crc_value = null_crc)
 ```
 
 * Support for the following algorithms are built-in:
