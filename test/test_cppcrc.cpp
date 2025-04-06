@@ -15,15 +15,16 @@ constexpr uint8_t test_sequence[] = {
 
 // tests both a single crc calc and a chunked up calculation
 #define TEST_CRC(name, expected)                                        \
-    static_assert(name::calc_exact(                                     \
+    static_assert(name::calc(                                     \
                       test_sequence,                                    \
                       sizeof(test_sequence)) == expected,               \
                   "validate one pass data sequence");                   \
-    static_assert(name::calc_chunk(                                     \
+    static_assert(name::calc(                                     \
                       test_sequence + 10,                               \
                       sizeof(test_sequence) - 10,                       \
-                      name::calc_chunk(test_sequence, 10)) == expected, \
-                  "validate chunked up data")
+                      name::calc(test_sequence, 10)) == expected, \
+                  "validate chunked up data");                          \
+    static_assert(name::null_crc == name::calc(), "matches")
 
 TEST_CRC(CRC8::CRC8, 0x45_u8);
 TEST_CRC(CRC8::CDMA2000, 0x92_u8);
@@ -136,9 +137,13 @@ static_assert(crc_utils::crc<uint8_t, 0x9B, 0x00, false, false, 0x00>::calc(test
 constexpr uint8_t test_sequence3[] = {0x01};
 static_assert(crc_utils::crc<uint8_t, 0x9B, 0xFF, false, false, 0x00>::calc(test_sequence3, 1) == 0xE0_u8, "validate");
 
+// algorithms without output reflection x-ors should have the same init and null crc
 static_assert(CRC16::CCITT_FALSE::calc() == CRC16::CCITT_FALSE::init);
-static_assert(CRC16::CCITT_FALSE::calc_exact() == CRC16::CCITT_FALSE::init);
-static_assert(CRC16::CCITT_FALSE::calc_chunk() == CRC16::CCITT_FALSE::calc_chunk_init);
+static_assert(CRC16::CCITT_FALSE::calc() == CRC16::CCITT_FALSE::null_crc);
+
+// algorithms with output reflection x-ors should NOT have the same init and null crc
+static_assert(CRC32::CRC32::calc() != CRC32::CRC32::init);
+static_assert(CRC32::CRC32::calc() == CRC32::CRC32::null_crc);
 
 int main()
 {

@@ -11,6 +11,11 @@ int main()
     uint16_t crc_value = CRC16::CCITT_FALSE::calc(data, sizeof(data));
     printf("crc_value = 0x%04X\n", crc_value);
 
+    // optionally continue an existing calculation by passing in the previous crc value
+    uint8_t more_data[] = {0x78, 0x9A};
+    crc_value = CRC16::CCITT_FALSE::calc(more_data, sizeof(more_data),  crc_value);
+    printf("crc_value = 0x%04X (continued)\n", crc_value);
+
     // view the lookup table:
     auto &crc_table = CRC16::CCITT_FALSE::table();
     printf("crc_table = {0x%04X", crc_table[0]);
