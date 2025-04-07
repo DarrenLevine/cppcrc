@@ -19,29 +19,28 @@
 
 namespace crc_utils
 {
-    inline constexpr uint8_t reverse(uint8_t x)
+    inline constexpr uint8_t reverse_bits(uint8_t x)
     {
         constexpr uint8_t lookup[16] = {0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe, 0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf};
         return (lookup[x & 0x0F] << 4) | lookup[x >> 4];
     }
-    inline constexpr uint16_t reverse(uint16_t x)
+    inline constexpr uint16_t reverse_bits(uint16_t x)
     {
-        return uint16_t(reverse(uint8_t(x))) << 8 | uint16_t(reverse(uint8_t(x >> 8)));
+        return uint16_t(reverse_bits(uint8_t(x))) << 8 | uint16_t(reverse_bits(uint8_t(x >> 8)));
     }
-    inline constexpr uint32_t reverse(uint32_t x)
+    inline constexpr uint32_t reverse_bits(uint32_t x)
     {
-        return uint32_t(reverse(uint16_t(x))) << 16 | uint32_t(reverse(uint16_t(x >> 16)));
+        return uint32_t(reverse_bits(uint16_t(x))) << 16 | uint32_t(reverse_bits(uint16_t(x >> 16)));
     }
-    inline constexpr uint64_t reverse(uint64_t x)
+    inline constexpr uint64_t reverse_bits(uint64_t x)
     {
-        return uint64_t(reverse(uint32_t(x))) << 32 | uint64_t(reverse(uint32_t(x >> 32)));
+        return uint64_t(reverse_bits(uint32_t(x))) << 32 | uint64_t(reverse_bits(uint32_t(x >> 32)));
     }
-
     template <typename out_t, out_t poly, bool refl_in, bool refl_out, size_t index>
     constexpr out_t get_crc_table_value_at_index()
     {
         constexpr size_t bit_width = sizeof(out_t) * 8;
-        out_t remainder            = refl_in ? reverse(static_cast<out_t>(index)) >> (bit_width - 8u) : static_cast<out_t>(index);
+        out_t remainder            = refl_in ? reverse_bits(static_cast<out_t>(index)) >> (bit_width - 8u) : static_cast<out_t>(index);
         constexpr out_t mask       = static_cast<out_t>(1) << (bit_width - 1u);
         for (size_t i = 0; i < bit_width; i++)
         {
@@ -50,7 +49,7 @@ namespace crc_utils
             else
                 remainder <<= 1;
         }
-        return refl_in ? reverse(remainder) : remainder;
+        return refl_in ? reverse_bits(remainder) : remainder;
     }
 
     template <typename out_t, out_t poly, bool refl_in, bool refl_out, size_t size = 256, typename = std::make_index_sequence<size>>
@@ -70,46 +69,39 @@ namespace crc_utils
     template <typename out_t, out_t poly, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<refl_in, int *>::type = nullptr>
     constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc)
     {
-        if (n == 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
-            return (refl_out ? reverse(crc) : crc) ^ x_or_out;
         constexpr auto &lookup = crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
-        crc                    = reverse(crc);
-        do
+        crc                    = reverse_bits(crc);
+        while (n--)
             crc = lookup[static_cast<uint8_t>(*bytes++ ^ crc)] ^ (crc >> 8);
-        while (--n);
-        return (refl_out != refl_in ? reverse(crc) : crc) ^ x_or_out; // needed since the reflections are baked into the table for speed
+        return (refl_out != refl_in ? reverse_bits(crc) : crc) ^ x_or_out; // needed since the reflections are baked into the table for speed
     }
 
     template <typename out_t, out_t poly, bool refl_in, bool refl_out, out_t x_or_out, typename std::enable_if<!refl_in, int *>::type = nullptr>
     constexpr out_t calculate_crc(const uint8_t *bytes, size_t n, out_t crc)
     {
-        if (n > 0u) // check for the n==0 case up front, so that we can use --n instead of n--, gaining a slight speedup
-        {
-            constexpr auto &lookup             = crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
-            constexpr size_t bit_width_minus_8 = sizeof(out_t) * 8 - 8U;
-            do
-                crc = lookup[static_cast<uint8_t>(*bytes++ ^ (crc >> bit_width_minus_8))] ^ (crc << 8);
-            while (--n);
-        }
-        return (refl_out ? reverse(crc) : crc) ^ x_or_out;
+        constexpr auto &lookup             = crc_lookup_table<out_t, poly, refl_in, refl_out>().value;
+        constexpr size_t bit_width_minus_8 = sizeof(out_t) * 8 - 8U;
+        while (n--)
+            crc = lookup[static_cast<uint8_t>(*bytes++ ^ (crc >> bit_width_minus_8))] ^ (crc << 8);
+        return (refl_out ? reverse_bits(crc) : crc) ^ x_or_out;
     }
 
     template <typename out_t, out_t poly_arg, out_t init_arg, bool refl_in_arg, bool refl_out_arg, out_t x_or_out_arg>
     struct crc
     {
-        using type                      = out_t;        ///< base type of the crc algorithm
-        static constexpr out_t poly     = poly_arg;     ///< polynomial of the crc algorithm
-        static constexpr out_t init     = init_arg;     ///< initial CRC internal state, WARNING: may be different from "null_crc"
-        static constexpr bool refl_in   = refl_in_arg;  ///< true if the bits of the crc should be reflected/reversed on input
-        static constexpr bool refl_out  = refl_out_arg; ///< true if the bits of the crc should be reflected/reversed on output
-        static constexpr out_t x_or_out = x_or_out_arg; ///< the value to X-OR the output with
-        static constexpr out_t null_crc = (refl_out ? reverse(init) : init) ^ x_or_out;  ///< CRC value of no/null data
+        using type                      = out_t;        // base type of the crc algorithm
+        static constexpr out_t poly     = poly_arg;     // polynomial of the crc algorithm
+        static constexpr out_t init     = init_arg;     // initial CRC internal state, WARNING: may be different from "null_crc"
+        static constexpr bool refl_in   = refl_in_arg;  // true if the bits of the crc should be reflected/reversed on input
+        static constexpr bool refl_out  = refl_out_arg; // true if the bits of the crc should be reflected/reversed on output
+        static constexpr out_t x_or_out = x_or_out_arg; // the value to X-OR the output with
+        static constexpr out_t null_crc = (refl_out ? reverse_bits(init) : init) ^ x_or_out; // CRC value of no/null data
 
         /// @brief Calculate the checksum of some bytes, or continue an existing calculation by passing in the prior crc value
         static constexpr out_t calc(const uint8_t *bytes = nullptr, size_t num_bytes = 0u, out_t prior_crc_value = null_crc)
         {
             prior_crc_value = x_or_out ? prior_crc_value ^ x_or_out : prior_crc_value;
-            prior_crc_value = refl_out ? reverse(prior_crc_value) : prior_crc_value;
+            prior_crc_value = refl_out ? reverse_bits(prior_crc_value) : prior_crc_value;
             return calculate_crc<out_t, poly, refl_in, refl_out, x_or_out>(bytes, num_bytes, prior_crc_value);
         }
         /// @brief the underlying pre-computed CRC table used for fast lookup-table-based calculations
@@ -121,7 +113,7 @@ namespace crc_utils
 } // namespace crc_utils
 
 //
-// Default CRC Configurations:
+// Default CRC Configurations: <type, poly, init, refl_in, refl_out, x_or_out>
 //
 
 namespace CRC8

@@ -12,6 +12,7 @@ A very small, fast, header-only, C++ library for generating CRCs
 
 * Can be used to generate arbitrary/custom CRC calculators, and CRC lookup tables **at compile time**
 * Header-only, single file, very small backend implementation (<100 lines)
+* Very fast [check out the benchmarks](#benchmarks)
 * Each CRC function has the signature:
 
 ```cpp
@@ -128,4 +129,34 @@ int main()
     // and access the underlying lookup table for your CRC function
     auto &crc_table = your_crc_name::table();
 }
+```
+
+## Benchmarks
+
+### Using data generated at **run-time** with various array sizes and checksum algorithms
+
+|             ns/64kB |              64kB/s |    err% |        ins/64kB |       bra/64kB |   miss% |     total | Checkum Calculators
+|--------------------:|--------------------:|--------:|----------------:|---------------:|--------:|----------:|:--------------------
+|          118,718.50 |            8,423.29 |    0.5% |      527,620.00 |      65,943.00 |    0.0% |      1.20 | `DarrenLevine/cppcrc`
+|          118,729.00 |            8,422.54 |    0.5% |      577,143.00 |      65,959.00 |    0.0% |      1.20 | `boostorg/crc`
+|          122,306.00 |            8,176.21 |    0.5% |      560,697.00 |      65,987.00 |    0.0% |      1.23 | `d-bahr/CRCpp [w/ static table]`
+|          151,351.00 |            6,607.16 |    0.5% |      890,311.00 |      65,943.00 |    0.0% |      1.53 | `pstolarz/CRaC`
+|          380,683.00 |            2,626.86 |    1.2% |    3,083,889.00 |     115,556.00 |    5.3% |      3.83 | `d-bahr/CRCpp`
+
+### Using data generated at **compile-time** with various array sizes and checksum algorithms
+
+|             ns/64kB |              64kB/s |    err% |        ins/64kB |       bra/64kB |   miss% |     total | Checkum Calculators
+|--------------------:|--------------------:|--------:|----------------:|---------------:|--------:|----------:|:--------------------
+|                0.45 |    2,229,858,535.96 |    0.5% |            1.00 |           0.00 |    0.0% |      0.22 | `DarrenLevine/cppcrc [w/ constexpr data]`
+|                0.45 |    2,219,406,249.99 |    0.5% |            1.00 |           0.00 |    0.0% |      0.22 | `pstolarz/CRaC [w/ constexpr data]`
+|              995.09 |        1,004,933.31 |    0.5% |        5,805.27 |         643.95 |    0.2% |      0.22 | `boostorg/crc [w/ constexpr data]`
+|            1,014.95 |          985,270.21 |    0.4% |        5,716.24 |         667.95 |    0.2% |      0.22 | `d-bahr/CRCpp [w/ constexpr data]`
+
+Benchmarked using nanobench on a AMD Ryzen 9 5900HS CPU. See benchmark/main.cpp for exact details.
+
+How to run the benchmarks (it's recommended you install boost first):
+
+```sh
+git clone https://github.com/DarrenLevine/cppcrc.git
+cd cppcrc/benchmark && make
 ```
